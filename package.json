@@ -1,0 +1,19 @@
+{
+  "name": "lotus-writer",
+  "version": "1.0.0",
+  "description": "科幻小说写作桌面软件：侧边栏自动查找维基百科等可信资料",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "electron": "^45.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.3.0"
+  },
+  "productName": "Lotus"
+}

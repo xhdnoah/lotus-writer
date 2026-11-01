@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://upload.wikimedia.org https://thumb.wikimedia.org data:; connect-src 'none'" />
+  <title>Lotus</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- 左栏：项目与章节树 -->
+    <aside class="left">
+      <div class="drag-strip"></div>
+      <div class="brand"><span class="wordmark"><span class="brand-emoji">🪷</span>Lotus</span></div>
+      <input id="projectTitle" class="project-title" spellcheck="false" />
+      <div class="section-head">
+        <span>章节</span>
+        <button id="addChapter" class="icon-btn" title="新建章节">＋</button>
+      </div>
+      <ul id="chapterList" class="chapter-list"></ul>
+      <div class="left-foot">
+        <div class="stat"><span id="statWords">0</span> 字 · 全书 <span id="statTotal">0</span></div>
+        <button id="openSettings" class="ghost-btn">⚙ 设置</button>
+      </div>
+    </aside>
+
+    <!-- 中栏：正文 -->
+    <main class="center">
+      <div class="drag-strip"></div>
+      <header class="doc-head">
+        <input id="chapterTitle" class="chapter-title" spellcheck="false" placeholder="章节标题" />
+        <div class="save-state" id="saveState">已保存</div>
+      </header>
+      <div class="editor-wrap">
+        <textarea id="editor" class="editor" spellcheck="false"
+                  placeholder="从这里开始写。右侧资料栏会读取光标所在的段落，自动查找相关的科学条目。"></textarea>
+      </div>
+    </main>
+
+    <!-- 右栏：资料侧边栏 -->
+    <aside class="right" id="sidebar">
+      <div class="drag-strip"></div>
+      <div class="side-tabs">
+        <button class="tab active" data-tab="discover">发现</button>
+        <button class="tab" data-tab="pinned">资料夹 <span id="pinCount" class="badge">0</span></button>
+        <button class="icon-btn" id="refreshResearch" title="重新查询当前段落">↻</button>
+      </div>
+
+      <section class="pane" id="pane-discover">
+        <div class="context-box">
+          <div class="context-label">
+            <span id="engineTag" class="engine-tag">本地</span>
+            <span>正在阅读的段落</span>
+            <span id="researchStatus" class="status"></span>
+          </div>
+          <div id="contextPreview" class="context-preview">（光标停在某个段落时开始）</div>
+          <div id="termChips" class="chips"></div>
+        </div>
+        <div id="results" class="results"></div>
+      </section>
+
+      <section class="pane hidden" id="pane-pinned">
+        <div id="pinned" class="results"></div>
+      </section>
+
+      <!-- 阅读器覆盖在侧边栏上 -->
+      <section class="reader hidden" id="reader">
+        <div class="reader-bar">
+          <button id="readerBack" class="ghost-btn">← 返回</button>
+          <div class="reader-actions">
+            <button id="readerPin" class="ghost-btn">📌 收藏</button>
+            <button id="readerExternal" class="ghost-btn">↗ 浏览器打开</button>
+          </div>
+        </div>
+        <div class="reader-source" id="readerSource"></div>
+        <h2 id="readerTitle" class="reader-title"></h2>
+        <article id="readerBody" class="reader-body"></article>
+      </section>
+    </aside>
+  </div>
+
+  <!-- 角色取名（隐藏入口：点左上角 “Lotus” 字样或 ⌘⇧N） -->
+  <div class="name-popover hidden" id="namePopover">
+    <div class="name-head">
+      <span>角色取名</span>
+      <button id="nameReroll" class="icon-btn" title="换一批">↻</button>
+    </div>
+    <div class="seg">
+      <button data-style="zh">中文</button><button data-style="west">西式</button><button data-style="ja">日式</button><button data-style="code">星际代号</button>
+    </div>
+    <div class="seg" id="nameGender">
+      <button data-gender="any">随机</button><button data-gender="m">男</button><button data-gender="f">女</button><button data-gender="n">中性</button>
+    </div>
+    <div id="nameList" class="name-list"></div>
+    <div class="name-tip">点击插入到光标处 · ⌥ 点击复制 · Esc 关闭</div>
+  </div>
+
+  <!-- 设置 -->
+  <div class="modal hidden" id="settingsModal">
+    <div class="modal-card">
+      <h3>设置</h3>
+      <label class="row">
+        <span>自动查询</span>
+        <input type="checkbox" id="setAuto" />
+      </label>
+      <label class="col">
+        <span>关键词识别</span>
+        <select id="setEngine">
+          <option value="auto">自动（有 API Key 时用 Claude，否则本地）</option>
+          <option value="local">仅本地（分词 + 维基标题匹配 + 科幻术语表）</option>
+          <option value="claude">Claude（把口语描述映射到规范词条）</option>
+        </select>
+      </label>
+      <label class="col">
+        <span>Anthropic API Key（可选，仅保存在本机）</span>
+        <input type="password" id="setKey" placeholder="sk-ant-..." />
+      </label>
+      <fieldset class="col">
+        <span>资料来源</span>
+        <label class="row"><span>中文维基百科</span><input type="checkbox" id="srcZh" /></label>
+        <label class="row"><span>英文维基百科</span><input type="checkbox" id="srcEn" /></label>
+        <label class="row"><span>arXiv 论文</span><input type="checkbox" id="srcArxiv" /></label>
+      </fieldset>
+      <div class="col">
+        <span>离线缓存（查询过的条目保存在本机，7 天内直接复用，断网时也能读）</span>
+        <div class="row">
+          <span id="cacheStats" class="cache-stats">统计中…</span>
+          <button id="clearCache" class="ghost-btn">清空缓存</button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="settingsCancel" class="ghost-btn">取消</button>
+        <button id="settingsSave" class="primary-btn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="glossary.js"></script>
+  <script src="sanitize.js"></script>
+  <script src="research.js"></script>
+  <script src="app.js"></script>
+  <script src="names.js"></script>
+</body>
+</html>
