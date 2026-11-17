@@ -1,2 +1,13 @@
 node_modules/
 .DS_Store
+dist/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+project.json
+settings.json
+dify-sync.json
+lotus-cache/
+*.log

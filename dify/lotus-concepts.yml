@@ -1,0 +1,149 @@
+app:
+  description: Lotus 写作软件的概念识别：读整章，列出值得到维基百科查证的科学概念（JSON）。
+  icon: 🪷
+  icon_background: '#E4FBCC'
+  mode: workflow
+  name: Lotus 概念提取
+  use_icon_as_answer_icon: false
+kind: app
+version: 0.3.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      enabled: false
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: llm
+      id: start-source-llm-target
+      source: start
+      sourceHandle: source
+      target: llm
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: end
+      id: llm-source-end-target
+      source: llm
+      sourceHandle: source
+      target: end
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        desc: ''
+        selected: false
+        title: 开始
+        type: start
+        variables:
+        - label: 章节文本
+          max_length: 30000
+          options: []
+          required: true
+          type: paragraph
+          variable: text
+      height: 90
+      id: start
+      position:
+        x: 80
+        y: 280
+      positionAbsolute:
+        x: 80
+        y: 280
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: ''
+        model:
+          completion_params:
+            temperature: 0.2
+          mode: chat
+          name: deepseek-v4-flash
+          provider: langgenius/deepseek/deepseek
+        prompt_template:
+        - id: system-prompt
+          role: system
+          text: |-
+            你是科幻小说写作助手的“资料官”。作者给你一整章正文，你要找出其中值得到维基百科查证的科学、技术、天文、物理、生物、哲学或历史概念。
+            规则：
+            - 只挑真实存在、可查证的概念；忽略人物名、虚构名词和日常词汇（如“时间”“世界”“机器”）。
+            - 把口语化描述映射到规范的百科词条名，例如“宇宙的寿命”→“宇宙的终极命运”“热寂”“宇宙年龄”。
+            - zh 用中文维基百科最可能的条目标题（简体），en 用英文维基百科条目标题，phrase 是原文中触发该概念的字词。
+            - 按在章节中出现的先后排序，最多 15 个。
+            只输出一个 JSON 对象，不要任何解释或代码块标记，格式：
+            {"concepts":[{"phrase":"原文字词","zh":"中文条目","en":"English title","why":"一句话说明它在这一章里的作用"}]}
+        - id: user-prompt
+          role: user
+          text: '{{#start.text#}}'
+        selected: false
+        title: 概念提取
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 98
+      id: llm
+      position:
+        x: 400
+        y: 280
+      positionAbsolute:
+        x: 400
+        y: 280
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        outputs:
+        - value_selector:
+          - llm
+          - text
+          variable: result
+        selected: false
+        title: 结束
+        type: end
+      height: 90
+      id: end
+      position:
+        x: 720
+        y: 280
+      positionAbsolute:
+        x: 720
+        y: 280
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    viewport:
+      x: 0
+      y: 0
+      zoom: 1

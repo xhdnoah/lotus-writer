@@ -4,7 +4,8 @@
   "description": "科幻小说写作桌面软件：侧边栏自动查找维基百科等可信资料",
   "main": "src/main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "package:mac": "python3 scripts/package-mac.py"
   },
   "author": "",
   "license": "ISC",

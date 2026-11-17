@@ -1,4 +1,4 @@
-// 角色随机取名。入口故意藏起来：点左上角的 “Lotus” 字样，或按 ⌘⇧N / Ctrl+Shift+N。
+// 角色随机取名。入口故意藏起来：点左栏的“章节”二字，或按 ⌘⇧N / Ctrl+Shift+N。
 (function () {
   const $ = (id) => document.getElementById(id);
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -111,7 +111,7 @@
   function close() { $('namePopover').classList.add('hidden'); }
   const toggle = () => (isOpen() ? close() : open());
 
-  document.querySelector('.wordmark').addEventListener('click', toggle);
+  document.querySelector('.name-trigger').addEventListener('click', toggle);
   $('nameReroll').addEventListener('click', render);
   document.querySelectorAll('#namePopover [data-style]').forEach((b) => b.addEventListener('click', () => { state.style = b.dataset.style; render(); }));
   document.querySelectorAll('#namePopover [data-gender]').forEach((b) => b.addEventListener('click', () => { state.gender = b.dataset.gender; render(); }));
@@ -120,7 +120,7 @@
     else if (e.key === 'Escape' && isOpen()) close();
   });
   document.addEventListener('mousedown', (e) => {
-    if (isOpen() && !e.target.closest('#namePopover, .wordmark')) close();
+    if (isOpen() && !e.target.closest('#namePopover, .name-trigger')) close();
   });
 
   window.Names = { batch };

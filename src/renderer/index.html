@@ -12,10 +12,12 @@
     <!-- 左栏：项目与章节树 -->
     <aside class="left">
       <div class="drag-strip"></div>
-      <div class="brand"><span class="wordmark"><span class="brand-emoji">🪷</span>Lotus</span></div>
       <input id="projectTitle" class="project-title" spellcheck="false" />
+      <button id="branchBtn" class="branch-btn" title="分支与版本">
+        <span class="branch-icon">⎇</span><span id="branchName">main</span><span id="dirtyDot" class="dirty-dot hidden" title="有还没保存成版本的改动"></span>
+      </button>
       <div class="section-head">
-        <span>章节</span>
+        <span class="name-trigger">章节</span>
         <button id="addChapter" class="icon-btn" title="新建章节">＋</button>
       </div>
       <ul id="chapterList" class="chapter-list"></ul>
@@ -30,11 +32,12 @@
       <div class="drag-strip"></div>
       <header class="doc-head">
         <input id="chapterTitle" class="chapter-title" spellcheck="false" placeholder="章节标题" />
+        <div class="save-state hidden" id="difyState"></div>
         <div class="save-state" id="saveState">已保存</div>
       </header>
       <div class="editor-wrap">
         <textarea id="editor" class="editor" spellcheck="false"
-                  placeholder="从这里开始写。右侧资料栏会读取光标所在的段落，自动查找相关的科学条目。"></textarea>
+                  placeholder="从这里开始写。右侧资料栏会读取整章内容，自动查找相关的科学条目。"></textarea>
       </div>
     </main>
 
@@ -44,20 +47,29 @@
       <div class="side-tabs">
         <button class="tab active" data-tab="discover">发现</button>
         <button class="tab" data-tab="pinned">资料夹 <span id="pinCount" class="badge">0</span></button>
-        <button class="icon-btn" id="refreshResearch" title="重新查询当前段落">↻</button>
+        <button class="tab" data-tab="world">世界观 <span id="worldCount" class="badge">0</span></button>
+        <button class="icon-btn" id="refreshResearch" title="重新查询本章">↻</button>
       </div>
 
       <section class="pane" id="pane-discover">
         <div class="context-box">
           <div class="context-label">
             <span id="engineTag" class="engine-tag">本地</span>
-            <span>正在阅读的段落</span>
+            <span>本章</span>
             <span id="researchStatus" class="status"></span>
           </div>
-          <div id="contextPreview" class="context-preview">（光标停在某个段落时开始）</div>
+          <div id="contextPreview" class="context-preview">（打开一章后开始）</div>
           <div id="termChips" class="chips"></div>
         </div>
         <div id="results" class="results"></div>
+      </section>
+
+      <section class="pane hidden" id="pane-world">
+        <div class="world-intro">
+          <span>在这个宇宙里成立的设定，比如“冰的密度大于水”“这个恒星系有三颗恒星”。设定存在作品文件夹的“世界观”目录里，开启 Dify 后会同步进知识库。</span>
+          <button id="addWorld" class="ghost-btn">＋ 新建设定</button>
+        </div>
+        <div id="worldList" class="world-list"></div>
       </section>
 
       <section class="pane hidden" id="pane-pinned">
@@ -80,7 +92,7 @@
     </aside>
   </div>
 
-  <!-- 角色取名（隐藏入口：点左上角 “Lotus” 字样或 ⌘⇧N） -->
+  <!-- 角色取名（隐藏入口：点左栏的“章节”二字或 ⌘⇧N） -->
   <div class="name-popover hidden" id="namePopover">
     <div class="name-head">
       <span>角色取名</span>
@@ -94,6 +106,24 @@
     </div>
     <div id="nameList" class="name-list"></div>
     <div class="name-tip">点击插入到光标处 · ⌥ 点击复制 · Esc 关闭</div>
+  </div>
+
+  <!-- 分支与版本 -->
+  <div class="popover branch-popover hidden" id="branchPopover">
+    <div class="pop-head">分支</div>
+    <ul id="branchList" class="branch-list"></ul>
+    <div class="pop-row">
+      <input id="newBranch" placeholder="新分支名，如 结局B" spellcheck="false" />
+      <button id="createBranch" class="ghost-btn">从当前新建</button>
+    </div>
+    <div class="pop-head">保存版本</div>
+    <div class="pop-row">
+      <input id="commitMessage" placeholder="这一版改了什么（可选）" spellcheck="false" />
+      <button id="commitBtn" class="primary-btn">保存版本</button>
+    </div>
+    <div class="pop-head">最近版本</div>
+    <ul id="historyList" class="history-list"></ul>
+    <div class="name-tip">切换或新建分支前，未保存的改动会自动存成一个版本</div>
   </div>
 
   <!-- 设置 -->
@@ -110,18 +140,41 @@
           <option value="auto">自动（有 API Key 时用 Claude，否则本地）</option>
           <option value="local">仅本地（分词 + 维基标题匹配 + 科幻术语表）</option>
           <option value="claude">Claude（把口语描述映射到规范词条）</option>
+          <option value="dify">Dify 工作流（用你在 Dify 里配的大模型识别概念）</option>
         </select>
       </label>
       <label class="col">
-        <span>Anthropic API Key（可选，仅保存在本机）</span>
+        <span>Anthropic API Key（可选，使用系统安全存储加密）</span>
         <input type="password" id="setKey" placeholder="sk-ant-..." />
       </label>
+      <p class="cache-stats">隐私：资料查询会发送候选词给维基百科 / arXiv；Claude 和 Dify 工作流会发送章节正文；Dify 检索会发送概念及正文片段。自动同步会上传完整文稿。仅使用你信任的服务；关闭自动查资料和 Dify 可停止自动外发。</p>
       <fieldset class="col">
         <span>资料来源</span>
         <label class="row"><span>中文维基百科</span><input type="checkbox" id="srcZh" /></label>
         <label class="row"><span>英文维基百科</span><input type="checkbox" id="srcEn" /></label>
         <label class="row"><span>arXiv 论文</span><input type="checkbox" id="srcArxiv" /></label>
+        <label class="row"><span>Dify 知识库</span><input type="checkbox" id="srcDify" /></label>
       </fieldset>
+      <div class="col" id="difyBox">
+        <span>Dify 知识库（在 Dify 的“知识库 → 服务 API”里创建知识库 API Key）</span>
+        <input id="difyBaseUrl" class="text-input" placeholder="API 地址，默认 https://api.dify.ai/v1" spellcheck="false" />
+        <input id="difyDatasetId" class="text-input" placeholder="知识库 ID（知识库网址里的那串 UUID）" spellcheck="false" />
+        <input id="difyApiKey" class="text-input" type="password" placeholder="知识库 API Key，dataset-..." spellcheck="false" />
+        <input id="difyWorkflowKey" class="text-input" type="password" placeholder="概念提取工作流应用的 API Key，app-...（选“Dify 工作流”识别时用）" spellcheck="false" />
+        <label class="row"><span>同意自动上传完整章节和世界观设定到此知识库（默认关闭）</span><input type="checkbox" id="difyAutoSync" /></label>
+        <div class="row">
+          <span id="difyTestResult" class="cache-stats"></span>
+          <button id="difyTest" class="ghost-btn">测试连接</button>
+        </div>
+      </div>
+      <div class="col">
+        <span>文稿文件夹（每章实时保存为一个 Markdown 文件，同时是一个 git 仓库）</span>
+        <div class="row folder-row">
+          <span id="folderPath" class="folder-path"></span>
+          <button id="revealFolder" class="ghost-btn">打开</button>
+          <button id="changeFolder" class="ghost-btn">更改</button>
+        </div>
+      </div>
       <div class="col">
         <span>离线缓存（查询过的条目保存在本机，7 天内直接复用，断网时也能读）</span>
         <div class="row">
